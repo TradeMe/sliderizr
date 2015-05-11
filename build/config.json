@@ -1,0 +1,20 @@
+{
+	"tsGlob": "src/sliderizr/**/*.ts",
+  	"definitionsGlob": "src/sliderizr/**/*.d.ts",
+	"typingsGlob": "typings/**/*.ts",
+	"bin": "dist",
+	"tmp": "tmp",
+	"src": "src",
+  	"definitionsOutput": "sliderizr.d.ts",
+	"tplGlob": "src/templates/**/*.html",
+	"tpl":"src/templates",
+	"outputFile": "sliderizr.js",
+	"outputFileMinExt": ".min.js",
+	"templateCache": {
+		"file": "templates.js",
+		"options": {
+			"rootModule": "sliderizr",
+			"rootPath": "/templates/"
+		}
+	}
+}
