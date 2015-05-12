@@ -2,6 +2,8 @@
 'use strict';
 var config 			 = require('./build/config.json');
 var gulp             = require('gulp');
+
+var log             = require('./build/logger.js');
 var generateJS       = require('./build/generate-js/generate-js-task');
 var compileTemplates = require('./build/compile-templates/compile-templates-task');
 var cleanCode       	= require('./build/clean/clean-task');
@@ -32,6 +34,7 @@ gulp.task('default', ['build']);
 gulp.task('server', function () {
     // Start the server at the beginning of the task 
     server.run(['demo/app.js']);
+	log.info("demo server started on http://localhost:" + (process.env.PORT || 5000));
  
     // Restart the server when file changes 
     gulp.watch(['demo/**/*.html'], server.notify);
