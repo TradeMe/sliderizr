@@ -1,8 +1,27 @@
+<!DOCTYPE html>
 <html>
 <head>
-
+  <title>Sliderizr Demo</title>
+  <link rel="stylesheet" href="/demo/css/default.css">
 </head>
 <body>
-  Hello world
+<div class="app" ng-app="app">
+  <nav>
+    <a href="#/">Default</a>
+    <a href="#/panel1">Pane 1</a>
+    <a href="#/panel2">Pane 2</a>
+    <a href="#/panel1/panel2">Pane 1 and 2</a>
+  </nav>
+
+  <div class="panel-container"></div>
+</div>
+
+<script src="/demo/vendor/jquery/dist/jquery.js"></script>
+<script src="/demo/vendor/lodash/lodash.js"></script>
+<script src="/demo/vendor/angular/angular.js"></script>
+<script src="/demo/vendor/angular-animate/angular-animate.js"></script>
+<script src="/demo/app/sliderizr.js"></script>
+
+<script src="/demo/app/app.js"></script>
 </body>
 </html>
