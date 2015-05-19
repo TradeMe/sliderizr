@@ -8,19 +8,19 @@
 		panelRouteProvider
 			.when('default',
 			{
-				templateUrl: 'templates/index.html',
+				templateUrl: 'demo/templates/index.html',
 				title: 'Default Panel',
 				controller: 'defaultController',
 				controllerAs: 'vm'
 			})
 			.when('panel1',
 			{
-				templateUrl: 'templates/panel1.html',
+				templateUrl: 'demo/templates/panel1.html',
 				title: 'Panel One'
 			})
 			.when('panel2',
 			{
-				templateUrl: 'templates/panel2.html',
+				templateUrl: 'demo/templates/panel2.html',
 				title: 'Panel Two'
 			})
 			.otherwise('default');
