@@ -34,7 +34,7 @@ gulp.task('default', ['build']);
 gulp.task('server', function () {
     // Start the server at the beginning of the task 
     server.run(['demo/app.js']);
-	log.info("demo server started on http://localhost:" + (process.env.PORT || 5000));
+	log.info('demo server started on http://localhost:' + (process.env.PORT || 5000) + '/index.html');
  
     // Restart the server when file changes 
     gulp.watch(['demo/**/*.html'], server.notify);

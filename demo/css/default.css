@@ -30,6 +30,7 @@ body{
 	background-color: #BBB;
 	white-space: nowrap;
 	overflow: auto;
+	padding-right: 600px;
 }
 
 .site-panel {

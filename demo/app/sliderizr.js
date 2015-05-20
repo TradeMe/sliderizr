@@ -13,6 +13,10 @@ var sliderizr;
     var PanelRouteProvider = (function () {
         function PanelRouteProvider() {
             this.routes = {};
+            this.config = {
+                panelTemplateUrl: 'templates/sliderizr/panel.html',
+                panelInnerTemplateUrl: 'templates/sliderizr/panel-inner.html'
+            };
         }
         PanelRouteProvider.prototype.when = function (name, route) {
             this.routes[name] = angular.copy(route);
@@ -24,13 +28,14 @@ var sliderizr;
         };
         // @ngInject
         PanelRouteProvider.prototype.$get = function () {
-            return new PanelRouteService(this.routes);
+            return new PanelRouteService(this.routes, this.config);
         };
         return PanelRouteProvider;
     })();
     var PanelRouteService = (function () {
-        function PanelRouteService(routes) {
+        function PanelRouteService(routes, config) {
             this.routes = routes;
+            this.config = config;
         }
         return PanelRouteService;
     })();
@@ -58,7 +63,6 @@ var sliderizr;
             this.$injector = $injector;
             this.$sce = $sce;
             this.$templateRequest = $templateRequest;
-            this.panelTemplateUrl = 'templates/sliderizr/panel.html';
             this.openPanels = [];
             //immediately load all panels from the # path
             this.loadPanelsFromPath();
@@ -212,7 +216,7 @@ var sliderizr;
         PanelService.prototype.createPanelElement = function (contentTemplateUrl, panelScope) {
             var _this = this;
             var templateUrl = this.$sce.getTrustedResourceUrl(contentTemplateUrl);
-            var panelTemplateUrl = this.$sce.getTrustedResourceUrl(this.panelTemplateUrl);
+            var panelTemplateUrl = this.$sce.getTrustedResourceUrl(this.panelRoute.config.panelTemplateUrl);
             return this.$q.all([this.$templateRequest(panelTemplateUrl), this.$templateRequest(templateUrl)]).then(function (values) {
                 var panelElement = angular.element(values[0]).html(values[1]);
                 return _this.$compile(panelElement)(panelScope);
@@ -619,25 +623,46 @@ var sliderizr;
 var sliderizr;
 (function (sliderizr) {
     'use strict';
-    function panelFactory($timeout) {
+    function panelFactory($timeout, panelRoute) {
         var activeAnimationElement;
         var directive = {
             restrict: 'C',
             transclude: true,
-            templateUrl: 'templates/sliderizr/panel-inner.html',
+            templateUrl: panelRoute.config.panelInnerTemplateUrl,
             link: link
         };
-        function link(scope, element, attrs) {
-            scope.$watch('$active', function (newValue, oldValue) {
+        function link(scope, element) {
+            var parent = element.parent();
+            scope.$watch('$active', function (newValue) {
                 if (newValue) {
-                    $timeout(scrollVisible, .2);
+                    scrollVisible();
                 }
             });
             function scrollVisible() {
-                var parent = element.parent();
+                //If there is a scroll animation already in progress, stop it
+                if (activeAnimationElement) {
+                    activeAnimationElement.stop(true, false);
+                }
+                //function s(){
+                //	var scroll = getScrollAmmount();
+                //
+                //	if (scroll){
+                //		parent.scrollLeft(scroll);
+                //		window.setTimeout(s, 10);
+                //	}
+                //}
+                //s();
+                //Store the element in a global so we can stop the animation if needed
+                activeAnimationElement = parent;
+                //Animate the scroll
+                parent.animate({ scrollLeft: getScrollAmmount() }, 200, function () {
+                    activeAnimationElement = null;
+                });
+            }
+            function getScrollAmmount() {
                 var scrollLeft = parent.scrollLeft();
                 var parentWidth = parent.outerWidth();
-                var panelWidth = element.outerWidth();
+                var panelWidth = claculateWidth();
                 var prevSibling = element.prev();
                 //Calculate offset left from previous sibling as the current element may be in the wrong position due to animations
                 var offsetLeft = prevSibling.length === 0 ? 0 : (prevSibling.offset().left + prevSibling.outerWidth() - parent.offset().left) + scrollLeft;
@@ -647,26 +672,29 @@ var sliderizr;
                     scroll = offsetLeft;
                 }
                 else if (scrollLeft < (visibleRight - parentWidth)) {
-                    scroll = visibleRight - parentWidth + 10;
+                    scroll = visibleRight - parentWidth + 50; //Add an extra 50px on the end so the panel isnt butted up against the side of the browser
                 }
                 else {
                     return;
                 }
-                //If there is a scroll animation already in progress, stop it
-                if (activeAnimationElement) {
-                    activeAnimationElement.stop(true, false);
+                return scroll;
+            }
+            function claculateWidth() {
+                //If the element is already open, we can just read its width
+                if (!element.is('.open-add')) {
+                    return element.outerWidth();
                 }
-                //Store the element in a global so we can stop the animation if needed
-                activeAnimationElement = parent;
-                //Animate the scroll
-                parent.animate({ scrollLeft: scroll }, 300, function () {
-                    activeAnimationElement = null;
-                });
+                //Because the panel's width may be animated during an 'open' animation, we need another way of getting its width
+                //To do this we create a temporary 'open' panel, remove the 'open-*' animation classes, add it to the panel container, measure its width then remove it again
+                var tmp = $('<div />').attr('class', element.attr('class')).removeClass('open-add').removeClass('open-add-active').appendTo(element.parent());
+                var width = tmp.outerWidth();
+                tmp.remove();
+                return width;
             }
         }
         return directive;
     }
-    panelFactory.$inject = ["$timeout"];
+    panelFactory.$inject = ["$timeout", "panelRoute"];
     angular.module('sliderizr').directive('sitePanel', panelFactory);
 })(sliderizr || (sliderizr = {}));
 

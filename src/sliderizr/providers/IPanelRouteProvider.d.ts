@@ -3,5 +3,6 @@ declare module sliderizr {
         when(name: string, route: IPanelRoute): IPanelRouteProvider;
         otherwise(route: IPanelRoute): IPanelRouteProvider;
         otherwise(routeName: string): IPanelRouteProvider;
+        config: ISliderizrConfig;
     }
 }
