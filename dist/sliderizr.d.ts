@@ -108,6 +108,12 @@ declare module sliderizr {
 		[id: string]: string;
 	}
 } 
+declare module sliderizr{
+	export interface ISliderizrConfig{
+		panelTemplateUrl: string;
+		panelInnerTemplateUrl: string;
+	}
+}
 declare module sliderizr {
 	export enum PanelSize {
 		Small = 1,
@@ -121,12 +127,14 @@ declare module sliderizr {
         when(name: string, route: IPanelRoute): IPanelRouteProvider;
         otherwise(route: IPanelRoute): IPanelRouteProvider;
         otherwise(routeName: string): IPanelRouteProvider;
+        config: ISliderizrConfig;
     }
 }
 
 declare module sliderizr {
     export interface IPanelRouteService {
         routes: IRouteCollection;
+        config: ISliderizrConfig;
     }
 }
 

@@ -5,7 +5,6 @@ module sliderizr {
 		private openPanels: IOpenPanel[];
 		private currentUrl: string;
 		private setActivePromise: ng.IPromise<void>;
-		private panelTemplateUrl = 'templates/sliderizr/panel.html';
 
 		constructor(private $rootScope: ng.IRootScopeService,
 					private $controller: ng.IControllerService,
@@ -198,7 +197,7 @@ module sliderizr {
 		 */
 		private createPanelElement(contentTemplateUrl: string, panelScope: IPanelScope): ng.IPromise<ng.IAugmentedJQuery> {
 			var templateUrl = this.$sce.getTrustedResourceUrl(contentTemplateUrl);
-			var panelTemplateUrl = this.$sce.getTrustedResourceUrl(this.panelTemplateUrl);
+			var panelTemplateUrl = this.$sce.getTrustedResourceUrl(this.panelRoute.config.panelTemplateUrl);
 
 			return this.$q.all([this.$templateRequest(panelTemplateUrl), this.$templateRequest(templateUrl)]).then((values: string[]) => {
 				var panelElement = angular

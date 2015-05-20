@@ -3,6 +3,9 @@ module sliderizr {
 
 	class PanelRouteProvider implements IPanelRouteProvider {
 		routes: IRouteCollection = {};
+		config: ISliderizrConfig = {
+			panelTemplateUrl: 'templates/sliderizr/panel.html',
+			panelInnerTemplateUrl: 'templates/sliderizr/panel-inner.html' };
 
 		when (name: string, route: IPanelRoute) {
 			this.routes[name] = angular.copy(route);
@@ -20,12 +23,12 @@ module sliderizr {
 
 		// @ngInject
 		$get() {
-			return new PanelRouteService(this.routes);
+			return new PanelRouteService(this.routes, this.config);
 		}
 	}
 
 	class PanelRouteService implements IPanelRouteService {
-		constructor(public routes: IRouteCollection) { }
+		constructor(public routes: IRouteCollection, public config: ISliderizrConfig) { }
 	}
 
 	function factory(): ng.IServiceProvider {
