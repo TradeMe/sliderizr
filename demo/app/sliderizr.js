@@ -96,13 +96,14 @@ var sliderizr;
                 _this.updateUrl();
                 _this.setActive();
                 panel.deferred.resolve(result);
+                return null;
             });
         };
-        PanelService.prototype.open = function (a, b, c, d) {
+        PanelService.prototype.open = function (a, b, c) {
             var _this = this;
             var parent;
             //Reconstruct arguments based on overloads
-            var panelOptions = { name: a };
+            var panelOptions = typeof a === 'object' ? a : { name: a };
             if (b && b.result) {
                 parent = b;
             }
@@ -123,6 +124,7 @@ var sliderizr;
                 //Re enable animation in case it was disabled prior to opening (if there was already a child open to the given parent)
                 _this.$animate.enabled(true);
                 _this.updateUrl();
+                return null;
             });
             //Set active immediately so the scroll animation happens in time with the panel slide animation
             this.setActive(instance);
@@ -144,7 +146,7 @@ var sliderizr;
                 _this.close(panelInstance, result);
             };
             panelScope.$dismiss = function (reason) {
-                _this.dsimiss(panelInstance, reason);
+                _this.dismiss(panelInstance, reason);
             };
             panelScope.$setActive = function () {
                 _this.setActive(panelInstance, true);
@@ -178,15 +180,15 @@ var sliderizr;
                     _this.close(panelInstance, result);
                 },
                 dismiss: function (reason) {
-                    _this.dsimiss(panelInstance, reason);
+                    _this.dismiss(panelInstance, reason);
                 },
                 setActive: function () {
                     _this.setActive(panelInstance);
                 },
                 setTitle: function () {
                 },
-                openChild: function (options) {
-                    return _this.open(options, panelInstance);
+                openChild: function (a, b) {
+                    return _this.open(a, b || panelInstance, panelInstance);
                 }
             };
             return panelInstance;
@@ -229,18 +231,24 @@ var sliderizr;
             var _this = this;
             var resultDeferred = this.$q.defer();
             var openedDeferred = this.$q.defer();
-            var route = this.panelRoute.routes[options.name] || this.panelRoute.routes['null'];
-            if (route && route.redirectTo) {
-                options = typeof route.redirectTo === 'string' ? { name: route.redirectTo } : route.redirectTo;
-                route = this.panelRoute.routes[options.name];
+            var route;
+            if (options.name) {
+                route = this.panelRoute.routes[options.name] || this.panelRoute.routes['null'];
+                if (route && route.redirectTo) {
+                    options = typeof route.redirectTo === 'string' ? { name: route.redirectTo } : route.redirectTo;
+                    route = this.panelRoute.routes[options.name];
+                }
+                if (!route) {
+                    throw new Error('No route found with the name "' + options.name + '"');
+                }
             }
-            if (!route) {
-                throw new Error('No route found with the name "' + options.name + '"');
+            else {
+                route = options;
             }
             //Create panel instance (for injection into controllers)
             var panelInstance = this.createPanelInstance(options, openedDeferred.promise, resultDeferred.promise);
             //wait for all promises to complete
-            this.prepareToOpenPanel(route, parent).then(function (resolvedLocals) {
+            this.prepareToOpenPanel(route, options, parent).then(function (resolvedLocals) {
                 var panelScope = _this.createPanelScope(panelInstance, route, (options.title || route.title), parent);
                 //Create and set up controller if defined
                 if (route.controller) {
@@ -272,7 +280,7 @@ var sliderizr;
          * @param panelInstance Instance of the panel to close
          * @param reason Optional reason for dismissing the panel
          */
-        PanelService.prototype.dsimiss = function (panelInstance, reason) {
+        PanelService.prototype.dismiss = function (panelInstance, reason) {
             var panel = this.getPanelByInstance(panelInstance);
             panel.deferred.reject(reason);
             this.removePanel(panel);
@@ -333,11 +341,13 @@ var sliderizr;
          * @param parent The parent panel that is opening the new panel
          * @returns {}
          */
-        PanelService.prototype.prepareToOpenPanel = function (panelRoute, parent) {
+        PanelService.prototype.prepareToOpenPanel = function (panelRoute, options, parent) {
             var _this = this;
             var promises = [];
-            if (panelRoute.resolve) {
-                angular.forEach(panelRoute.resolve, function (value, key) {
+            var resolve = {};
+            if (panelRoute.resolve || options.resolve) {
+                resolve = angular.extend({}, panelRoute.resolve || {}, options.resolve || {});
+                angular.forEach(resolve, function (value, key) {
                     promises.push(angular.isString(value) ? _this.$injector.get(value) : _this.$injector.invoke(value, null, key));
                 });
             }
@@ -351,12 +361,10 @@ var sliderizr;
             return this.$q.all(promises).then(function (values) {
                 //Create a dictionary of resolved local values
                 var locals = {};
-                if (panelRoute.resolve) {
-                    var ix = 0;
-                    angular.forEach(panelRoute.resolve, function (value, key) {
-                        locals[key] = values[ix++];
-                    });
-                }
+                var ix = 0;
+                angular.forEach(resolve, function (value, key) {
+                    locals[key] = values[ix++];
+                });
                 return locals;
             });
         };
@@ -367,6 +375,9 @@ var sliderizr;
          */
         PanelService.prototype.findExistingPanel = function (options, parent) {
             var _this = this;
+            if (!options.name) {
+                return null;
+            }
             var parentPanel = this.getPanelByInstance(parent);
             return this._.find(this.openPanels, function (p) {
                 return ((options === p.instance.options || _this.compareOptions(options, p.instance.options)) && p.parent == parentPanel);
@@ -545,6 +556,9 @@ var sliderizr;
             var queryIndicatorAdded = false;
             var url = '';
             panels.forEach(function (panel) {
+                if (!panel.options.name) {
+                    return;
+                }
                 url += _this.pageDividerChar;
                 url += panel.options.name;
                 queryIndicatorAdded = false;

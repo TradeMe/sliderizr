@@ -18,6 +18,10 @@ module sliderizr {
 			var url = '';
 
 			panels.forEach((panel) => {
+				if (!panel.options.name) {
+					return;
+				}
+
 				url += this.pageDividerChar;
 				url += panel.options.name;
 				queryIndicatorAdded = false;

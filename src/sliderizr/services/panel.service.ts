@@ -7,15 +7,15 @@ module sliderizr {
 		private setActivePromise: ng.IPromise<void>;
 
 		constructor(private $rootScope: ng.IRootScopeService,
-					private $controller: ng.IControllerService,
-					private $compile: ng.ICompileService,
-					private panelRoute: IPanelRouteService,
-					private $q: ng.IQService,
-					private _: _.LoDashStatic,
-					private $animate: ng.animate.IAnimateService,
-					private $timeout: ng.ITimeoutService,
-					private panelUrlService: IPanelUrlService,
-					private $injector: ng.auto.IInjectorService, private $sce: ng.ISCEService, private $templateRequest: ng.ITemplateRequestService) {
+			private $controller: ng.IControllerService,
+			private $compile: ng.ICompileService,
+			private panelRoute: IPanelRouteService,
+			private $q: ng.IQService,
+			private _: _.LoDashStatic,
+			private $animate: ng.animate.IAnimateService,
+			private $timeout: ng.ITimeoutService,
+			private panelUrlService: IPanelUrlService,
+			private $injector: ng.auto.IInjectorService, private $sce: ng.ISCEService, private $templateRequest: ng.ITemplateRequestService) {
 			this.openPanels = [];
 
 			//immediately load all panels from the # path
@@ -29,14 +29,14 @@ module sliderizr {
 			});
 		}
 
-		getActivePanel() : IPanelInstance<IRouteParams> {
+		getActivePanel(): IPanelInstance<IRouteParams> {
 			var panel = <IOpenPanel>this._.find(this.openPanels,(p) => { return p.panelScope.$active; });
 
 			return panel.instance;
 		}
 
-		getAllOpenPanels() : IPanelInstance<IRouteParams>[] {
-			return this._.map(this.openPanels, (p: IOpenPanel) => { return p.instance; });
+		getAllOpenPanels(): IPanelInstance<IRouteParams>[] {
+			return this._.map(this.openPanels,(p: IOpenPanel) => { return p.instance; });
 		}
 
 		/**
@@ -50,6 +50,7 @@ module sliderizr {
 				this.updateUrl();
 				this.setActive();
 				panel.deferred.resolve(result);
+				return null;
 			});
 		}
 
@@ -87,11 +88,27 @@ module sliderizr {
 		 */
 		open<T extends IRouteParams>(name: string, routeParams: IRouteParams, parent?: IPanelInstance<IRouteParams>): IPanelInstance<T>;
 
-		open(a: any, b?: any, c?: any, d?: any): any {
+		/**
+		 * Open a new panel
+		 * @param options Options to use to configure the panel
+		 * @param parent The parent panel that is opening the new panel (Optional)
+		 * @returns {} 
+		 */
+		open(options: IPanelOptions<IRouteParams>, parent?: IPanelInstance<IRouteParams>): IPanelInstance<IRouteParams>;
+
+		/**
+		 * Open a new panel
+		 * @param options Options to use to configure the panel
+		 * @param parent The parent panel that is opening the new panel (Optional)
+		 * @returns {} 
+		 */
+		open<T extends IRouteParams>(options: IPanelOptions<IRouteParams>, parent?: IPanelInstance<IRouteParams>): IPanelInstance<T>;
+
+		open(a: any, b?: any, c?: any): any {
 			var parent: IPanelInstance<IRouteParams>;
 
 			//Reconstruct arguments based on overloads
-			var panelOptions = <IPanelOptions<IRouteParams>>{ name: a };
+			var panelOptions = typeof a === 'object' ? <IPanelOptions<IRouteParams>>a : <IPanelOptions<IRouteParams>>{ name: a };
 
 			if (b && (<IPanelInstance<IRouteParams>>b).result) { //Check for a well known property on b to determine if its a panelInstance or not
 				parent = b;
@@ -115,6 +132,7 @@ module sliderizr {
 				//Re enable animation in case it was disabled prior to opening (if there was already a child open to the given parent)
 				this.$animate.enabled(true);
 				this.updateUrl();
+				return null;
 			});
 
 			//Set active immediately so the scroll animation happens in time with the panel slide animation
@@ -135,7 +153,7 @@ module sliderizr {
 			//Create Scope (from parent scope if there is a parent)
 			var panelScope = <IPanelScope>(parent ? this.getPanelByInstance(parent).panelScope : this.$rootScope).$new();
 			panelScope.$close = result => { this.close(panelInstance, result); };
-			panelScope.$dismiss = reason => { this.dsimiss(panelInstance, reason); };
+			panelScope.$dismiss = reason => { this.dismiss(panelInstance, reason); };
 			panelScope.$setActive = () => { this.setActive(panelInstance, true); };
 			panelScope.$title = title || 'No Title';
 			panelScope.$active = false;
@@ -161,10 +179,10 @@ module sliderizr {
 				result: resultPromise,
 				options: options,
 				close: (result: any) => { this.close(panelInstance, result); },
-				dismiss: (reason: any) => { this.dsimiss(panelInstance, reason); },
+				dismiss: (reason: any) => { this.dismiss(panelInstance, reason); },
 				setActive: () => { this.setActive(panelInstance); },
 				setTitle: () => { },
-				openChild: (options: any) => { return this.open(options, panelInstance); }
+				openChild: (a: any, b?: any) => { return this.open(a, b || panelInstance, panelInstance); }
 			};
 
 			return panelInstance;
@@ -214,22 +232,28 @@ module sliderizr {
 		private createPanel(options: IPanelOptions<IRouteParams>, parent?: IPanelInstance<IRouteParams>): IPanelInstance<IRouteParams> {
 			var resultDeferred = this.$q.defer();
 			var openedDeferred = this.$q.defer<IPanelInstance<IRouteParams>>();
-			var route = this.panelRoute.routes[options.name] || this.panelRoute.routes['null'];
+			var route;
 
-			if (route && route.redirectTo) {
-				options = typeof route.redirectTo === 'string' ? <IPanelOptions<IRouteParams>>{ name: route.redirectTo } : <IPanelOptions<IRouteParams>>route.redirectTo;
-				route = this.panelRoute.routes[options.name];
-			}
+			if (options.name) {
+				route = this.panelRoute.routes[options.name] || this.panelRoute.routes['null'];
 
-			if (!route) {
-				throw new Error('No route found with the name "' + options.name + '"');
+				if (route && route.redirectTo) {
+					options = typeof route.redirectTo === 'string' ? <IPanelOptions<IRouteParams>>{ name: route.redirectTo } : <IPanelOptions<IRouteParams>>route.redirectTo;
+					route = this.panelRoute.routes[options.name];
+				}
+
+				if (!route) {
+					throw new Error('No route found with the name "' + options.name + '"');
+				}
+			} else {
+				route = options;
 			}
 
 			//Create panel instance (for injection into controllers)
 			var panelInstance = this.createPanelInstance(options, openedDeferred.promise, resultDeferred.promise);
 
 			//wait for all promises to complete
-			this.prepareToOpenPanel(route, parent).then((resolvedLocals) => {
+			this.prepareToOpenPanel(route, options, parent).then((resolvedLocals) => {
 				var panelScope = this.createPanelScope(panelInstance, route,(options.title || route.title), parent);
 
 				//Create and set up controller if defined
@@ -267,7 +291,7 @@ module sliderizr {
 		 * @param panelInstance Instance of the panel to close
 		 * @param reason Optional reason for dismissing the panel
 		 */
-		private dsimiss(panelInstance: IPanelInstance<IRouteParams>, reason: any) {
+		private dismiss(panelInstance: IPanelInstance<IRouteParams>, reason: any) {
 			var panel = this.getPanelByInstance(panelInstance);
 			panel.deferred.reject(reason);
 			this.removePanel(panel);
@@ -303,7 +327,7 @@ module sliderizr {
 
 				//Find the given panel and mark it as active
 				var panel = this.getPanelByInstance(panelInstance);
-				if (panel){
+				if (panel) {
 					panel.panelScope.$active = true;
 				}
 			};
@@ -321,7 +345,7 @@ module sliderizr {
 		 */
 		private closeAll(): ng.IPromise<any> {
 			var promises: ng.IPromise<void>[] = [];
-			this._.each(this.openPanels, (panel) =>{
+			this._.each(this.openPanels,(panel) => {
 				promises.push(this.removePanel(panel));
 			});
 
@@ -335,11 +359,14 @@ module sliderizr {
 		 * @param parent The parent panel that is opening the new panel
 		 * @returns {}
 		 */
-		private prepareToOpenPanel(panelRoute: IPanelRoute, parent?: IPanelInstance<IRouteParams>): ng.IPromise<any> {
+		private prepareToOpenPanel(panelRoute: IPanelRoute, options: IPanelOptions<IRouteParams>, parent?: IPanelInstance<IRouteParams>): ng.IPromise<any> {
 			var promises: ng.IPromise<any>[] = [];
+			var resolve = {};
 
-			if (panelRoute.resolve) {
-				angular.forEach(panelRoute.resolve, (value, key) => {
+			if (panelRoute.resolve || options.resolve) {
+				resolve = angular.extend({}, panelRoute.resolve || {}, options.resolve || {});
+
+				angular.forEach(resolve,(value, key) => {
 					promises.push(angular.isString(value) ? this.$injector.get(value) : this.$injector.invoke(value, null, key));
 				});
 			}
@@ -354,12 +381,10 @@ module sliderizr {
 			return this.$q.all(promises).then((values) => {
 				//Create a dictionary of resolved local values
 				var locals = {};
-				if (panelRoute.resolve) {
-					var ix = 0;
-					angular.forEach(panelRoute.resolve,(value, key) => {
-						locals[key] = values[ix++];
-					});
-				}
+				var ix = 0;
+				angular.forEach(resolve,(value, key) => {
+					locals[key] = values[ix++];
+				});
 				return locals;
 			});
 		}
@@ -370,9 +395,13 @@ module sliderizr {
 		 * @returns {}
 		 */
 		private findExistingPanel(options: IPanelOptions<IRouteParams>, parent?: IPanelInstance<IRouteParams>): IOpenPanel {
+			if (!options.name) {
+				return null;
+			}
+
 			var parentPanel = this.getPanelByInstance(parent);
 
-			return this._.find(this.openPanels, (p:IOpenPanel) => {
+			return this._.find(this.openPanels,(p: IOpenPanel) => {
 				return ((options === p.instance.options || this.compareOptions(options, p.instance.options)) && p.parent == parentPanel);
 			});
 		}
@@ -538,22 +567,22 @@ module sliderizr {
 		 * Serialize all the panel's options objects into a string for use in the url
 		 */
 		private getOpenPanelUrl(): string {
-			return this.panelUrlService.createUrl(_.map(this.openPanels, (p: IOpenPanel) => { return p.instance; }));
+			return this.panelUrlService.createUrl(_.map(this.openPanels,(p: IOpenPanel) => { return p.instance; }));
 		}
 	}
 
 	function factory($rootScope: ng.IRootScopeService,
-					 $controller: ng.IControllerService,
-					 $compile: ng.ICompileService,
-					 panelRoute: IPanelRouteService,
-					 $q: ng.IQService,
-					 _: _.LoDashStatic,
-					 $animate: ng.animate.IAnimateService,
-					 $timeout: ng.ITimeoutService,
-					 panelUrlService: IPanelUrlService,
-					 $injector: ng.auto.IInjectorService,
-					 $sce: ng.ISCEService,
-					 $templateRequest: ng.ITemplateRequestService): IPanelService {
+		$controller: ng.IControllerService,
+		$compile: ng.ICompileService,
+		panelRoute: IPanelRouteService,
+		$q: ng.IQService,
+		_: _.LoDashStatic,
+		$animate: ng.animate.IAnimateService,
+		$timeout: ng.ITimeoutService,
+		panelUrlService: IPanelUrlService,
+		$injector: ng.auto.IInjectorService,
+		$sce: ng.ISCEService,
+		$templateRequest: ng.ITemplateRequestService): IPanelService {
 		return new PanelService($rootScope, $controller, $compile, panelRoute, $q, _, $animate, $timeout, panelUrlService, $injector, $sce, $templateRequest);
 	}
 

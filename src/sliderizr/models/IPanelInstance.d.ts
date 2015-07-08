@@ -52,5 +52,17 @@
 		 * @param name Name of the panel to open
 		 */
 		openChild(name: string, routeParams?: IRouteParams): IPanelInstance<IRouteParams>;
+
+		/**
+		 * Open a child panel
+		 * @param options Options to use to construct the child panel
+		 */
+		openChild(options: IPanelOptions<IRouteParams>): IPanelInstance<IRouteParams>;
+
+		/**
+		 * Open a child panel
+		 * @param options Options to use to construct the child panel
+		 */
+		openChild<U extends IRouteParams>(options: IPanelOptions<IRouteParams>): IPanelInstance<U>;
 	}
 }

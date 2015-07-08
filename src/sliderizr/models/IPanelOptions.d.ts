@@ -1,7 +1,12 @@
 ﻿declare module sliderizr {
 	export interface IPanelOptions<T extends IRouteParams> {
-		name: string;
+		name?: string;
+		templateUrl?: string;
+		controller?: string;
+		controllerAs?: string;
+		size?: PanelSize;
 		params?: T;
-		title?:string;
+		title?: string;
+		resolve?: any;
 	}
 }
