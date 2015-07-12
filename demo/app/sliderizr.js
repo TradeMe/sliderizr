@@ -67,7 +67,7 @@ var sliderizr;
             //immediately load all panels from the # path
             this.loadPanelsFromPath();
             //Listen to hash changes to update the panel layout
-            $(window).on('hashchange', function () {
+            $(window).on('hashchange', function (ev) {
                 $rootScope.$apply(function () {
                     _this.onLocationChanged();
                 });
@@ -189,6 +189,9 @@ var sliderizr;
                 },
                 openChild: function (a, b) {
                     return _this.open(a, b || panelInstance, panelInstance);
+                },
+                beforeClose: function () {
+                    return _this.$q.when();
                 }
             };
             return panelInstance;
@@ -282,8 +285,9 @@ var sliderizr;
          */
         PanelService.prototype.dismiss = function (panelInstance, reason) {
             var panel = this.getPanelByInstance(panelInstance);
-            panel.deferred.reject(reason);
-            this.removePanel(panel);
+            this.closeBranch(panel).then(function () {
+                panel.deferred.reject(reason);
+            });
         };
         /**
          * Set a given panel as active
@@ -327,12 +331,18 @@ var sliderizr;
          * Close all open panels
          */
         PanelService.prototype.closeAll = function () {
-            var _this = this;
-            var promises = [];
-            this._.each(this.openPanels, function (panel) {
-                promises.push(_this.removePanel(panel));
-            });
-            return this.$q.all(promises);
+            var deferred = this.$q.defer();
+            if (this.openPanels.length > 0) {
+                var panel = this.openPanels[0];
+                this.closeBranch(panel).then(function () {
+                    panel.deferred.reject();
+                    deferred.resolve();
+                }, deferred.reject);
+            }
+            else {
+                deferred.resolve();
+            }
+            return deferred.promise;
         };
         /**
          * Resolves te route's resolve field and closes appropriate children
@@ -413,7 +423,11 @@ var sliderizr;
             var _this = this;
             if (!this.panelUrlService.isUrlCurrent(this.currentUrl)) {
                 this.closeAll().then(function () {
+                    console.log('close accepted');
                     _this.loadPanelsFromPath();
+                }, function () {
+                    console.log('close rejected');
+                    _this.updateUrl();
                 });
             }
         };
@@ -458,6 +472,8 @@ var sliderizr;
                     else {
                         deferred.resolve();
                     }
+                }, function () {
+                    deferred.reject();
                 });
             };
             //Check that there are children first
@@ -479,9 +495,15 @@ var sliderizr;
             var _this = this;
             var deferred = this.$q.defer();
             this.closeChildren(panel).then(function () {
-                _this.removePanel(panel).then(function () {
-                    deferred.resolve();
+                panel.instance.beforeClose().then(function () {
+                    _this.removePanel(panel).then(function () {
+                        deferred.resolve();
+                    });
+                }, function () {
+                    deferred.reject();
                 });
+            }, function () {
+                deferred.reject();
             });
             return deferred.promise;
         };
@@ -513,6 +535,7 @@ var sliderizr;
                 panel.element.remove();
                 _this.openPanels.splice(index, 1);
                 deferred.resolve();
+                panel.panelScope.$destroy();
             });
             return deferred.promise;
         };

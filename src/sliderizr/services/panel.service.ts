@@ -22,7 +22,7 @@ module sliderizr {
 			this.loadPanelsFromPath();
 
 			//Listen to hash changes to update the panel layout
-			$(window).on('hashchange',() => {
+			$(window).on('hashchange',(ev:any) => {
 				$rootScope.$apply(() => {
 					this.onLocationChanged();
 				});
@@ -46,6 +46,7 @@ module sliderizr {
 		 */
 		close(panelInstance: IPanelInstance<IRouteParams>, result: any) {
 			var panel = this.getPanelByInstance(panelInstance);
+
 			this.closeBranch(panel).then(() => {
 				this.updateUrl();
 				this.setActive();
@@ -182,7 +183,8 @@ module sliderizr {
 				dismiss: (reason: any) => { this.dismiss(panelInstance, reason); },
 				setActive: () => { this.setActive(panelInstance); },
 				setTitle: () => { },
-				openChild: (a: any, b?: any) => { return this.open(a, b || panelInstance, panelInstance); }
+				openChild: (a: any, b?: any) => { return this.open(a, b || panelInstance, panelInstance); },
+				beforeClose: () => { return this.$q.when(); }
 			};
 
 			return panelInstance;
@@ -291,10 +293,12 @@ module sliderizr {
 		 * @param panelInstance Instance of the panel to close
 		 * @param reason Optional reason for dismissing the panel
 		 */
-		private dismiss(panelInstance: IPanelInstance<IRouteParams>, reason: any) {
+		private dismiss(panelInstance: IPanelInstance<IRouteParams>, reason?: any) {
 			var panel = this.getPanelByInstance(panelInstance);
-			panel.deferred.reject(reason);
-			this.removePanel(panel);
+
+			this.closeBranch(panel).then(() =>{
+				panel.deferred.reject(reason);
+			});
 		}
 
 		/**
@@ -344,12 +348,21 @@ module sliderizr {
 		 * Close all open panels
 		 */
 		private closeAll(): ng.IPromise<any> {
-			var promises: ng.IPromise<void>[] = [];
-			this._.each(this.openPanels,(panel) => {
-				promises.push(this.removePanel(panel));
-			});
+			var deferred = this.$q.defer<any>();
 
-			return this.$q.all(promises);
+			if (this.openPanels.length > 0)
+			{
+				var panel = this.openPanels[0];
+				this.closeBranch(panel).then(() =>{
+					panel.deferred.reject();
+					deferred.resolve();
+				}, deferred.reject);
+			}
+			else {
+				deferred.resolve();
+			}
+
+			return deferred.promise;
 		}
 
 		/**
@@ -442,7 +455,11 @@ module sliderizr {
 		private onLocationChanged() {
 			if (!this.panelUrlService.isUrlCurrent(this.currentUrl)) {
 				this.closeAll().then(() => {
+					console.log('close accepted');
 					this.loadPanelsFromPath();
+				}, () =>{
+					console.log('close rejected');
+					this.updateUrl()
 				});
 			}
 		}
@@ -488,6 +505,8 @@ module sliderizr {
 					} else {
 						deferred.resolve();
 					}
+				}, () =>{
+					deferred.reject();
 				});
 			};
 
@@ -512,9 +531,15 @@ module sliderizr {
 			var deferred = this.$q.defer<void>();
 
 			this.closeChildren(panel).then(() => {
-				this.removePanel(panel).then(() => {
-					deferred.resolve();
+				panel.instance.beforeClose().then(() =>{
+					this.removePanel(panel).then(() => {
+						deferred.resolve();
+					});
+				}, () =>{
+					deferred.reject();
 				});
+			}, () =>{
+				deferred.reject();
 			});
 
 			return deferred.promise;
@@ -550,6 +575,7 @@ module sliderizr {
 				panel.element.remove();
 				this.openPanels.splice(index, 1);
 				deferred.resolve();
+				panel.panelScope.$destroy();
 			});
 
 			return deferred.promise;

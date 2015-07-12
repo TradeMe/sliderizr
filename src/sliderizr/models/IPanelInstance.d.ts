@@ -64,5 +64,10 @@
 		 * @param options Options to use to construct the child panel
 		 */
 		openChild<U extends IRouteParams>(options: IPanelOptions<IRouteParams>): IPanelInstance<U>;
+
+		/**
+		 * A Promise that must be resolved before the panel can be closed
+		 */
+		beforeClose(): ng.IPromise<any>;
 	}
 }
