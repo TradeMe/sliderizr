@@ -114,7 +114,7 @@ var sliderizr;
             //If the panel is already open, set it to active
             var existing = this.findExistingPanel(panelOptions, parent);
             if (existing) {
-                this.setActive(existing.instance);
+                this.setActive(existing.panelScope);
                 return existing.instance;
             }
             //Create the panel
@@ -126,8 +126,6 @@ var sliderizr;
                 _this.updateUrl();
                 return null;
             });
-            //Set active immediately so the scroll animation happens in time with the panel slide animation
-            this.setActive(instance);
             return instance;
         };
         /**
@@ -149,7 +147,7 @@ var sliderizr;
                 _this.dismiss(panelInstance, reason);
             };
             panelScope.$setActive = function () {
-                _this.setActive(panelInstance, true);
+                _this.setActive(panelScope, true);
             };
             panelScope.$title = title || 'No Title';
             panelScope.$active = false;
@@ -253,6 +251,8 @@ var sliderizr;
             //wait for all promises to complete
             this.prepareToOpenPanel(route, options, parent).then(function (resolvedLocals) {
                 var panelScope = _this.createPanelScope(panelInstance, route, (options.title || route.title), parent);
+                //Set active immediately so the scroll animation happens in time with the panel slide animation
+                _this.setActive(panelScope);
                 //Create and set up controller if defined
                 if (route.controller) {
                     _this.createController(route, panelInstance, panelScope, resolvedLocals);
@@ -294,7 +294,7 @@ var sliderizr;
          * @param panelInstance Instance of the panel to set as active (defaults to the last panel if none is supplied
          * @param immediate Set active immediately or set it in a timeout
          */
-        PanelService.prototype.setActive = function (panelInstance, immediate) {
+        PanelService.prototype.setActive = function (panelScope, immediate) {
             var _this = this;
             if (this.setActivePromise) {
                 //Immediates should not be processed if a promise is in play
@@ -306,17 +306,20 @@ var sliderizr;
                 this.setActivePromise = null;
             }
             //Default to the last panel if none is supplied
-            if (!panelInstance) {
-                panelInstance = this.openPanels[this.openPanels.length - 1].instance;
+            if (!panelScope) {
+                panelScope = this.openPanels[this.openPanels.length - 1].panelScope;
             }
             var innerSetActive = function () {
                 _this.setActivePromise = null;
                 //Mark all panels as inactive
                 _this.openPanels.forEach(function (panel) { return panel.panelScope.$active = false; });
                 //Find the given panel and mark it as active
-                var panel = _this.getPanelByInstance(panelInstance);
-                if (panel) {
-                    panel.panelScope.$active = true;
+                if (panelScope && !panelScope.$openChildPanel) {
+                    var p = _this.getPanelByInstance(panelScope);
+                    panelScope = p ? p.panelScope : null;
+                }
+                if (panelScope) {
+                    panelScope.$active = true;
                 }
             };
             if (immediate) {
@@ -423,10 +426,8 @@ var sliderizr;
             var _this = this;
             if (!this.panelUrlService.isUrlCurrent(this.currentUrl)) {
                 this.closeAll().then(function () {
-                    console.log('close accepted');
                     _this.loadPanelsFromPath();
                 }, function () {
-                    console.log('close rejected');
                     _this.updateUrl();
                 });
             }
@@ -466,6 +467,8 @@ var sliderizr;
             var closeChild = function (panel) {
                 children.splice(0, 1);
                 _this.closeBranch(panel).then(function () {
+                    //The child wasn't closed explicitly so we need to reject its promise
+                    panel.deferred.reject();
                     if (children.length > 0) {
                         closeChild(children[0]);
                     }

@@ -121,7 +121,7 @@ module sliderizr {
 			//If the panel is already open, set it to active
 			var existing = this.findExistingPanel(panelOptions, parent);
 			if (existing) {
-				this.setActive(existing.instance);
+				this.setActive(existing.panelScope);
 				return existing.instance;
 			}
 
@@ -135,9 +135,6 @@ module sliderizr {
 				this.updateUrl();
 				return null;
 			});
-
-			//Set active immediately so the scroll animation happens in time with the panel slide animation
-			this.setActive(instance);
 
 			return instance;
 		}
@@ -155,7 +152,7 @@ module sliderizr {
 			var panelScope = <IPanelScope>(parent ? this.getPanelByInstance(parent).panelScope : this.$rootScope).$new();
 			panelScope.$close = result => { this.close(panelInstance, result); };
 			panelScope.$dismiss = reason => { this.dismiss(panelInstance, reason); };
-			panelScope.$setActive = () => { this.setActive(panelInstance, true); };
+			panelScope.$setActive = () => { this.setActive(panelScope, true); };
 			panelScope.$title = title || 'No Title';
 			panelScope.$active = false;
 			panelScope.$openChildPanel = (name: string, routeParams?: IRouteParams) => { this.open(name, routeParams, panelInstance); };
@@ -258,6 +255,9 @@ module sliderizr {
 			this.prepareToOpenPanel(route, options, parent).then((resolvedLocals) => {
 				var panelScope = this.createPanelScope(panelInstance, route,(options.title || route.title), parent);
 
+				//Set active immediately so the scroll animation happens in time with the panel slide animation
+				this.setActive(panelScope);
+
 				//Create and set up controller if defined
 				if (route.controller) {
 					this.createController(route, panelInstance, panelScope, resolvedLocals);
@@ -306,7 +306,7 @@ module sliderizr {
 		 * @param panelInstance Instance of the panel to set as active (defaults to the last panel if none is supplied
 		 * @param immediate Set active immediately or set it in a timeout
 		 */
-		private setActive(panelInstance?: IPanelInstance<IRouteParams>, immediate?: boolean) {
+		private setActive(panelScope?: IPanelInstance<IRouteParams> | IPanelScope, immediate?: boolean) {
 			if (this.setActivePromise) {
 				//Immediates should not be processed if a promise is in play
 				if (immediate) {
@@ -319,8 +319,8 @@ module sliderizr {
 			}
 
 			//Default to the last panel if none is supplied
-			if (!panelInstance) {
-				panelInstance = this.openPanels[this.openPanels.length - 1].instance;
+			if (!panelScope) {
+				panelScope = this.openPanels[this.openPanels.length - 1].panelScope;
 			}
 
 			var innerSetActive = () => {
@@ -330,9 +330,14 @@ module sliderizr {
 				this.openPanels.forEach(panel => panel.panelScope.$active = false);
 
 				//Find the given panel and mark it as active
-				var panel = this.getPanelByInstance(panelInstance);
-				if (panel) {
-					panel.panelScope.$active = true;
+				if (panelScope && !(<IPanelScope>panelScope).$openChildPanel)
+				{
+					var p = this.getPanelByInstance(<IPanelInstance<IRouteParams>>panelScope);
+					panelScope = p ? p.panelScope : null;
+				}
+
+				if (panelScope) {
+					(<IPanelScope>panelScope).$active = true;
 				}
 			};
 
@@ -455,10 +460,8 @@ module sliderizr {
 		private onLocationChanged() {
 			if (!this.panelUrlService.isUrlCurrent(this.currentUrl)) {
 				this.closeAll().then(() => {
-					console.log('close accepted');
 					this.loadPanelsFromPath();
 				}, () =>{
-					console.log('close rejected');
 					this.updateUrl()
 				});
 			}
@@ -500,6 +503,9 @@ module sliderizr {
 			var closeChild = (panel: IOpenPanel) => {
 				children.splice(0, 1);
 				this.closeBranch(panel).then(() => {
+					//The child wasn't closed explicitly so we need to reject its promise
+					panel.deferred.reject();
+
 					if (children.length > 0) {
 						closeChild(children[0]);
 					} else {
