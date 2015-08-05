@@ -1,7 +1,7 @@
 module sliderizr{
 	'use strict';
 	
-	function factory(panelService: IPanelService): ng.IDirective{
+	function factory(): ng.IDirective{
 		var directive = <ng.IDirective>{
 			restrict: 'C',
 			link: link

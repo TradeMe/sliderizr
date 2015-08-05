@@ -17,7 +17,7 @@ var tsProject = tsCompiler.createProject({
 	//module: 'amd',
 	target: 'es5',
 	removeComments: false,
-	sourceRoot: '.',
+	//sourceRoot: '.',
 	noImplicitAny: false
 	//out: 'sldrzr'
 });

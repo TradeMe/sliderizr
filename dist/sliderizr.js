@@ -2,7 +2,8 @@ var sliderizr;
 (function (sliderizr) {
     angular.module('sliderizr', [
         'ngAnimate'
-    ]).constant('_', _);
+    ])
+        .constant('_', _);
 })(sliderizr || (sliderizr = {}));
 
 angular.module("sliderizr").run(["$templateCache", function($templateCache) {$templateCache.put("templates/sliderizr/panel-inner.html","<div><header><h1>{{$title}}</h1><button ng-click=$close() class=btn-close>close</button></header><div class=panel-body ng-transclude></div></div>");
@@ -15,8 +16,7 @@ var sliderizr;
             this.routes = {};
             this.config = {
                 panelTemplateUrl: 'templates/sliderizr/panel.html',
-                panelInnerTemplateUrl: 'templates/sliderizr/panel-inner.html'
-            };
+                panelInnerTemplateUrl: 'templates/sliderizr/panel-inner.html' };
         }
         PanelRouteProvider.prototype.when = function (name, route) {
             this.routes[name] = angular.copy(route);
@@ -74,15 +74,11 @@ var sliderizr;
             });
         }
         PanelService.prototype.getActivePanel = function () {
-            var panel = this._.find(this.openPanels, function (p) {
-                return p.panelScope.$active;
-            });
+            var panel = this._.find(this.openPanels, function (p) { return p.panelScope.$active; });
             return panel.instance;
         };
         PanelService.prototype.getAllOpenPanels = function () {
-            return this._.map(this.openPanels, function (p) {
-                return p.instance;
-            });
+            return this._.map(this.openPanels, function (p) { return p.instance; });
         };
         /**
          * Close a given panel and resolve the 'result' promise
@@ -140,25 +136,15 @@ var sliderizr;
             var _this = this;
             //Create Scope (from parent scope if there is a parent)
             var panelScope = (parent ? this.getPanelByInstance(parent).panelScope : this.$rootScope).$new();
-            panelScope.$close = function (result) {
-                _this.close(panelInstance, result);
-            };
-            panelScope.$dismiss = function (reason) {
-                _this.dismiss(panelInstance, reason);
-            };
-            panelScope.$setActive = function () {
-                _this.setActive(panelScope, true);
-            };
+            panelScope.$close = function (result) { _this.close(panelInstance, result); };
+            panelScope.$dismiss = function (reason) { _this.dismiss(panelInstance, reason); };
+            panelScope.$setActive = function () { _this.setActive(panelScope, true); };
             panelScope.$title = title || 'No Title';
             panelScope.$active = false;
-            panelScope.$openChildPanel = function (name, routeParams) {
-                _this.open(name, routeParams, panelInstance);
-            };
-            panelScope.$panelSize = panelRoute.size || 3 /* Large */;
+            panelScope.$openChildPanel = function (name, routeParams) { _this.open(name, routeParams, panelInstance); };
+            panelScope.$panelSize = panelRoute.size || sliderizr.PanelSize.Large;
             //Add the setTitle method to the instance now that we have a scope
-            panelInstance.setTitle = function (title) {
-                panelScope.$title = title;
-            };
+            panelInstance.setTitle = function (title) { panelScope.$title = title; };
             return panelScope;
         };
         /**
@@ -174,23 +160,12 @@ var sliderizr;
                 opened: openedPromise,
                 result: resultPromise,
                 options: options,
-                close: function (result) {
-                    _this.close(panelInstance, result);
-                },
-                dismiss: function (reason) {
-                    _this.dismiss(panelInstance, reason);
-                },
-                setActive: function () {
-                    _this.setActive(panelInstance);
-                },
-                setTitle: function () {
-                },
-                openChild: function (a, b) {
-                    return _this.open(a, b || panelInstance, panelInstance);
-                },
-                beforeClose: function () {
-                    return _this.$q.when();
-                }
+                close: function (result) { _this.close(panelInstance, result); },
+                dismiss: function (reason) { _this.dismiss(panelInstance, reason); },
+                setActive: function () { _this.setActive(panelInstance); },
+                setTitle: function () { },
+                openChild: function (a, b) { return _this.open(a, b || panelInstance, panelInstance); },
+                beforeClose: function () { return _this.$q.when(); }
             };
             return panelInstance;
         };
@@ -221,7 +196,9 @@ var sliderizr;
             var templateUrl = this.$sce.getTrustedResourceUrl(contentTemplateUrl);
             var panelTemplateUrl = this.$sce.getTrustedResourceUrl(this.panelRoute.config.panelTemplateUrl);
             return this.$q.all([this.$templateRequest(panelTemplateUrl), this.$templateRequest(templateUrl)]).then(function (values) {
-                var panelElement = angular.element(values[0]).html(values[1]);
+                var panelElement = angular
+                    .element(values[0])
+                    .html(values[1]);
                 return _this.$compile(panelElement)(panelScope);
             });
         };
@@ -407,11 +384,13 @@ var sliderizr;
             if (o1.name !== o2.name) {
                 return false;
             }
+            //Compare params from options 1
             for (key in o1.params) {
                 if (o1.params.hasOwnProperty(key) && o1.params[key] !== o2.params[key]) {
                     return false;
                 }
             }
+            //Compare params from options 2
             for (key in o2.params) {
                 if (o2.params.hasOwnProperty(key) && o1.params[key] !== o2.params[key]) {
                     return false;
@@ -553,9 +532,7 @@ var sliderizr;
          * Serialize all the panel's options objects into a string for use in the url
          */
         PanelService.prototype.getOpenPanelUrl = function () {
-            return this.panelUrlService.createUrl(_.map(this.openPanels, function (p) {
-                return p.instance;
-            }));
+            return this.panelUrlService.createUrl(_.map(this.openPanels, function (p) { return p.instance; }));
         };
         return PanelService;
     })();
@@ -564,7 +541,9 @@ var sliderizr;
         return new PanelService($rootScope, $controller, $compile, panelRoute, $q, _, $animate, $timeout, panelUrlService, $injector, $sce, $templateRequest);
     }
     factory.$inject = ["$rootScope", "$controller", "$compile", "panelRoute", "$q", "_", "$animate", "$timeout", "panelUrlService", "$injector", "$sce", "$templateRequest"];
-    angular.module('sliderizr').factory('panelService', factory);
+    angular
+        .module('sliderizr')
+        .factory('panelService', factory);
 })(sliderizr || (sliderizr = {}));
 
 var sliderizr;
@@ -663,6 +642,17 @@ var sliderizr;
 var sliderizr;
 (function (sliderizr) {
     'use strict';
+    (function (PanelSize) {
+        PanelSize[PanelSize["Small"] = 1] = "Small";
+        PanelSize[PanelSize["Medium"] = 2] = "Medium";
+        PanelSize[PanelSize["Large"] = 3] = "Large";
+    })(sliderizr.PanelSize || (sliderizr.PanelSize = {}));
+    var PanelSize = sliderizr.PanelSize;
+})(sliderizr || (sliderizr = {}));
+
+var sliderizr;
+(function (sliderizr) {
+    'use strict';
     function panelFactory($timeout, panelRoute) {
         var activeAnimationElement;
         var directive = {
@@ -726,7 +716,11 @@ var sliderizr;
                 }
                 //Because the panel's width may be animated during an 'open' animation, we need another way of getting its width
                 //To do this we create a temporary 'open' panel, remove the 'open-*' animation classes, add it to the panel container, measure its width then remove it again
-                var tmp = $('<div />').attr('class', element.attr('class')).removeClass('open-add').removeClass('open-add-active').appendTo(element.parent());
+                var tmp = $('<div />')
+                    .attr('class', element.attr('class'))
+                    .removeClass('open-add')
+                    .removeClass('open-add-active')
+                    .appendTo(element.parent());
                 var width = tmp.outerWidth();
                 tmp.remove();
                 return width;
@@ -741,7 +735,7 @@ var sliderizr;
 var sliderizr;
 (function (sliderizr) {
     'use strict';
-    function factory(panelService) {
+    function factory() {
         var directive = {
             restrict: 'C',
             link: link
@@ -750,6 +744,6 @@ var sliderizr;
         }
         return directive;
     }
-    factory.$inject = ["panelService"];
-    angular.module('sliderizr').directive('panelContainer', factory);
+    angular.module('sliderizr')
+        .directive('panelContainer', factory);
 })(sliderizr || (sliderizr = {}));

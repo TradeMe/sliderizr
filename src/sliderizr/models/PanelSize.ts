@@ -1,4 +1,6 @@
-﻿declare module sliderizr {
+﻿module sliderizr {
+	'use strict';
+
 	export enum PanelSize {
 		Small = 1,
 		Medium = 2,
