@@ -9,7 +9,6 @@ gulp.task('concat-js', function(){
             config.tmp + '/' + config.templateCache.file,
             config.tmp + '/providers/*.js',
             config.tmp + '/services/*.js',
-            config.tmp + '/models/*.js',
             config.tmp + '/directives/*.js'
         ])
         .pipe(concat(config.outputFile))

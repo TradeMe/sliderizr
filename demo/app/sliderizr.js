@@ -142,7 +142,7 @@ var sliderizr;
             panelScope.$title = title || 'No Title';
             panelScope.$active = false;
             panelScope.$openChildPanel = function (name, routeParams) { _this.open(name, routeParams, panelInstance); };
-            panelScope.$panelSize = panelRoute.size || sliderizr.PanelSize.Large;
+            panelScope.$panelSize = panelRoute.size || 3 /* Large */;
             //Add the setTitle method to the instance now that we have a scope
             panelInstance.setTitle = function (title) { panelScope.$title = title; };
             return panelScope;
@@ -637,17 +637,6 @@ var sliderizr;
         return new PanelUrlService();
     }
     angular.module('sliderizr').factory('panelUrlService', factory);
-})(sliderizr || (sliderizr = {}));
-
-var sliderizr;
-(function (sliderizr) {
-    'use strict';
-    (function (PanelSize) {
-        PanelSize[PanelSize["Small"] = 1] = "Small";
-        PanelSize[PanelSize["Medium"] = 2] = "Medium";
-        PanelSize[PanelSize["Large"] = 3] = "Large";
-    })(sliderizr.PanelSize || (sliderizr.PanelSize = {}));
-    var PanelSize = sliderizr.PanelSize;
 })(sliderizr || (sliderizr = {}));
 
 var sliderizr;

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>sliderizr</id>
-        <version>0.1.14</version>
+        <version>0.1.15</version>
         <title>sliderizr</title>
         <authors>Kris Mackintosh</authors>
         <licenseUrl>https://github.com/TradeMe/sliderizr/blob/master/LICENSE</licenseUrl>

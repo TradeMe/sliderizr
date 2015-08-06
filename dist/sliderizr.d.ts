@@ -1,20 +1,4 @@
 declare module sliderizr {
-    export interface IPanelRouteProvider extends ng.IServiceProvider {
-        when(name: string, route: IPanelRoute): IPanelRouteProvider;
-        otherwise(route: IPanelRoute): IPanelRouteProvider;
-        otherwise(routeName: string): IPanelRouteProvider;
-        config: ISliderizrConfig;
-    }
-}
-
-declare module sliderizr {
-    export interface IPanelRouteService {
-        routes: IRouteCollection;
-        config: ISliderizrConfig;
-    }
-}
-
-declare module sliderizr {
 	export interface IOpenPanel {
 		deferred: ng.IDeferred<any>;
 		panelScope: IPanelScope;
@@ -154,6 +138,30 @@ declare module sliderizr{
 	}
 }
 declare module sliderizr {
+	export const enum PanelSize {
+		Small = 1,
+		Medium = 2,
+		Large = 3
+	}
+}
+
+declare module sliderizr {
+    export interface IPanelRouteProvider extends ng.IServiceProvider {
+        when(name: string, route: IPanelRoute): IPanelRouteProvider;
+        otherwise(route: IPanelRoute): IPanelRouteProvider;
+        otherwise(routeName: string): IPanelRouteProvider;
+        config: ISliderizrConfig;
+    }
+}
+
+declare module sliderizr {
+    export interface IPanelRouteService {
+        routes: IRouteCollection;
+        config: ISliderizrConfig;
+    }
+}
+
+declare module sliderizr {
 	export interface IPanelService {
 		/**
 		 * Open a new panel
@@ -205,15 +213,5 @@ declare module sliderizr {
 		getActivePanel(): IPanelInstance<IRouteParams>;
 
 		getAllOpenPanels(): IPanelInstance<IRouteParams>[];
-	}
-}
-
-module sliderizr {
-	'use strict';
-
-	export enum PanelSize {
-		Small = 1,
-		Medium = 2,
-		Large = 3
 	}
 }
