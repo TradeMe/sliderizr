@@ -185,6 +185,7 @@ var sliderizr;
             if (panelRoute.controllerAs) {
                 panelScope[panelRoute.controllerAs] = controller;
             }
+            return controller;
         };
         /**
          * Create a panel's DOM element
@@ -230,12 +231,14 @@ var sliderizr;
                 var panelScope = _this.createPanelScope(panelInstance, route, (options.title || route.title), parent);
                 //Set active immediately so the scroll animation happens in time with the panel slide animation
                 _this.setActive(panelScope);
-                //Create and set up controller if defined
-                if (route.controller) {
-                    _this.createController(route, panelInstance, panelScope, resolvedLocals);
-                }
                 //Create panel DOM element
                 _this.createPanelElement(route.templateUrl, panelScope).then(function (panelElement) {
+                    //Create and set up controller if defined
+                    if (route.controller) {
+                        var ctrl = _this.createController(route, panelInstance, panelScope, resolvedLocals);
+                        //In order for directives to be able to find the controller using the require attribute, we need to bind the controller to its respective element
+                        panelElement.data('$' + route.controller + 'Controller', ctrl);
+                    }
                     //Create an open panel object for managing the panel internally
                     var openPanel = {
                         deferred: resultDeferred,

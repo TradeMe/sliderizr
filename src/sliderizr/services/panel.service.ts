@@ -194,7 +194,7 @@ module sliderizr {
 		 * @param panelScope The scope of the panel
 		 * @param resolvedLocals An object with local values that can be injected into the constructor of the controller
 		 */
-		private createController(panelRoute: IPanelRoute, panelInstance: IPanelInstance<IRouteParams>, panelScope: IPanelScope, resolvedLocals: any) {
+		private createController(panelRoute: IPanelRoute, panelInstance: IPanelInstance<IRouteParams>, panelScope: IPanelScope, resolvedLocals: any) : any {
 			var controllerLocals = angular.extend(
 				{
 					$panelInstance: panelInstance,
@@ -205,6 +205,7 @@ module sliderizr {
 			if (panelRoute.controllerAs) {
 				panelScope[panelRoute.controllerAs] = controller;
 			}
+			return controller;
 		}
 
 		/**
@@ -258,13 +259,16 @@ module sliderizr {
 				//Set active immediately so the scroll animation happens in time with the panel slide animation
 				this.setActive(panelScope);
 
-				//Create and set up controller if defined
-				if (route.controller) {
-					this.createController(route, panelInstance, panelScope, resolvedLocals);
-				}
-
 				//Create panel DOM element
 				this.createPanelElement(route.templateUrl, panelScope).then((panelElement) => {
+					//Create and set up controller if defined
+					if (route.controller) {
+						var ctrl = this.createController(route, panelInstance, panelScope, resolvedLocals);
+
+						//In order for directives to be able to find the controller using the require attribute, we need to bind the controller to its respective element
+						panelElement.data('$' + route.controller + 'Controller', ctrl)
+					}
+
 					//Create an open panel object for managing the panel internally
 					var openPanel = <IOpenPanel>{
 						deferred: resultDeferred,
