@@ -159,7 +159,13 @@ module sliderizr {
 			panelScope.$panelSize = panelRoute.size || PanelSize.Large;
 
 			//Add the setTitle method to the instance now that we have a scope
-			panelInstance.setTitle = (title) => { panelScope.$title = title; };
+			panelInstance.setTitle = (title, allowHtml) => {
+				if (allowHtml){
+					panelScope.$title = this.$sce.trustAsHtml(title);
+				} else {
+					panelScope.$title = title;
+				}
+			};
 
 			return panelScope;
 		}

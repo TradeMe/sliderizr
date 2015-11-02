@@ -49,7 +49,7 @@ declare module sliderizr {
 		 * @param title Title of the panel
 		 * @returns {} 
 		 */
-		setTitle(title: string): void;
+		setTitle(title: string, allowHtml?: boolean): void;
 
 		/**
 		 * Open a child panel

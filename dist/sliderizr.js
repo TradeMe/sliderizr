@@ -139,12 +139,19 @@ var sliderizr;
             panelScope.$close = function (result) { _this.close(panelInstance, result); };
             panelScope.$dismiss = function (reason) { _this.dismiss(panelInstance, reason); };
             panelScope.$setActive = function () { _this.setActive(panelScope, true); };
-            panelScope.$title = title || 'No Title';
+            panelScope.$title = this.$sce.trustAsHtml(title) || 'No Title';
             panelScope.$active = false;
             panelScope.$openChildPanel = function (name, routeParams) { _this.open(name, routeParams, panelInstance); };
             panelScope.$panelSize = panelRoute.size || 3 /* Large */;
             //Add the setTitle method to the instance now that we have a scope
-            panelInstance.setTitle = function (title) { panelScope.$title = title; };
+            panelInstance.setTitle = function (title, allowHtml) {
+                if (allowHtml) {
+                    panelScope.$title = _this.$sce.trustAsHtml(title);
+                }
+                else {
+                    panelScope.$title = title;
+                }
+            };
             return panelScope;
         };
         /**
