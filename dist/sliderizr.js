@@ -135,11 +135,11 @@ var sliderizr;
         PanelService.prototype.createPanelScope = function (panelInstance, panelRoute, title, parent) {
             var _this = this;
             //Create Scope (from parent scope if there is a parent)
-            var panelScope = (parent ? this.getPanelByInstance(parent).panelScope : this.$rootScope).$new();
+            var panelScope = this.$rootScope.$new();
             panelScope.$close = function (result) { _this.close(panelInstance, result); };
             panelScope.$dismiss = function (reason) { _this.dismiss(panelInstance, reason); };
             panelScope.$setActive = function () { _this.setActive(panelScope, true); };
-            panelScope.$title = this.$sce.trustAsHtml(title) || 'No Title';
+            panelScope.$title = title || 'No Title';
             panelScope.$active = false;
             panelScope.$openChildPanel = function (name, routeParams) { _this.open(name, routeParams, panelInstance); };
             panelScope.$panelSize = panelRoute.size || 3 /* Large */;

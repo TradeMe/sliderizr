@@ -149,7 +149,7 @@ module sliderizr {
 		 */
 		private createPanelScope(panelInstance: IPanelInstance<IRouteParams>, panelRoute: IPanelRoute, title: string, parent?: IPanelInstance<IRouteParams>): IPanelScope {
 			//Create Scope (from parent scope if there is a parent)
-			var panelScope = <IPanelScope>(parent ? this.getPanelByInstance(parent).panelScope : this.$rootScope).$new();
+			var panelScope = <IPanelScope>this.$rootScope.$new();
 			panelScope.$close = result => { this.close(panelInstance, result); };
 			panelScope.$dismiss = reason => { this.dismiss(panelInstance, reason); };
 			panelScope.$setActive = () => { this.setActive(panelScope, true); };
